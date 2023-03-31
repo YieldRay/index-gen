@@ -7,20 +7,12 @@ fn basic_html<'a>(title: &'a str, body: &'a str) -> String {
       <title>Index of /{}</title>
   </head>
   <body>
+      <h1>Index of /{}</h1>
       {}
   </body>
 </html>"#,
-        title, body
+        title, title, body
     )
-}
-
-fn a_link(parent_dir: &str, file_name: &str) -> String {
-    // `.` represents to root dir
-    if parent_dir == "." {
-        format!("<a href=\"{}\">{}</a>", file_name, file_name)
-    } else {
-        format!("<a href=\"{}/{}\">{}</a>", parent_dir, file_name, file_name)
-    }
 }
 
 pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str) -> String {
@@ -29,18 +21,24 @@ pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str) -> S
         builder.push_str("<ul>");
 
         for e in children {
-            builder.push_str("\n        <li>");
+            let mut li = String::from("\n        <li>");
 
-            builder.push_str(
-                &(match e {
-                    Entry::Dir(name, _) => {
-                        a_link(parent_dir, &format!("{}/{}", name, index_file_name))
+            let a_tag = match e {
+                Entry::Dir(name, _) => {
+                    format!("<a href=\"{}/{}\">{}/</a>", name, index_file_name, name)
+                }
+                Entry::File(name) => {
+                    if name == index_file_name {
+                        // exclude index_file_name
+                        break;
+                    } else {
+                        format!("<a href=\"{}\">{}</a>", name, name)
                     }
-                    Entry::File(name) => a_link(parent_dir, name),
-                }),
-            );
-
-            builder.push_str("</li>");
+                }
+            };
+            li.push_str(&a_tag);
+            li.push_str("</li>");
+            builder.push_str(&li)
         }
 
         builder.push_str("</ul>");

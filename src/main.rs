@@ -1,11 +1,12 @@
 #![recursion_limit = "256"]
-pub mod entry;
-pub mod html;
+mod entry;
+mod file;
+mod html;
 
 use clap::Parser;
 use std::path::Path;
 
-/// Generate index.html (or other name) for a diretory
+/// Generating index.html file recursively for a directory
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -21,24 +22,27 @@ struct Args {
     #[arg(short, long, default_value_t = false)]
     force: bool,
 
-    /// Print JSON
+    /// Do not generate file, only print JSON
     #[arg(short, long, default_value_t = false)]
     json: bool,
 }
 
 fn main() {
     let args = Args::parse();
-
     let root_dir = args.dir;
-    let entry = entry::Entry::new(&Path::new(&root_dir)).unwrap();
 
-    if args.json {
-        entry.print_json();
-        return;
+    match entry::Entry::new(&Path::new(&root_dir)) {
+        Ok(entry) => {
+            if args.json {
+                entry.print_json();
+                return;
+            }
+
+            let index_file_name = args.name;
+            file::gen_index(&entry, ".", &index_file_name)
+        }
+        Err(e) => {
+            eprintln!("-dir={}\n{}", root_dir, e);
+        }
     }
-
-    let index_file_name = args.name;
-    // html::gen_index(&entry, &index_file_name);
-
-    println!("{}", html::html_for_dir(&entry, ".", &index_file_name));
 }
