@@ -25,21 +25,36 @@ struct Args {
     /// Do not generate file, only print JSON
     #[arg(short, long, default_value_t = false)]
     json: bool,
+
+    /// Do not generate file, only print String
+    #[arg(short, long, default_value_t = false)]
+    string: bool,
 }
 
 fn main() {
     let args = Args::parse();
     let root_dir = args.dir;
+    let force = args.force;
 
     match entry::Entry::new(&Path::new(&root_dir)) {
         Ok(entry) => {
+            if args.json && args.string {
+                eprintln!("Cannot print both json and string");
+                return;
+            }
+
             if args.json {
                 entry.print_json();
                 return;
             }
 
+            if args.string {
+                entry.print();
+                return;
+            }
+
             let index_file_name = args.name;
-            file::gen_index(&entry, ".", &index_file_name)
+            file::gen_index(&entry, ".", &index_file_name, force)
         }
         Err(e) => {
             eprintln!("-dir={}\n{}", root_dir, e);

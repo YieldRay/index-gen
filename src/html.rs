@@ -1,15 +1,20 @@
 use crate::entry::Entry;
+use std::fmt::Write;
 
 fn basic_html<'a>(title: &'a str, body: &'a str) -> String {
     format!(
-        r#"<html>
-  <head>
-      <title>Index of /{}</title>
-  </head>
-  <body>
-      <h1>Index of /{}</h1>
-      {}
-  </body>
+        r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index of /{}</title>
+</head>
+<body>
+  <h1>Index of /{}</h1>
+  {}
+</body>
 </html>"#,
         title, title, body
     )
@@ -19,9 +24,17 @@ pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str) -> S
     if let Entry::Dir(root_dir_name, children) = entry {
         let mut builder = String::new();
         builder.push_str("<ul>");
+        if parent_dir != "." {
+            writeln!(
+                builder,
+                "\n    <li><a href=\"../{}\">..</a></li>",
+                index_file_name
+            )
+            .unwrap();
+        }
 
         for e in children {
-            let mut li = String::from("\n        <li>");
+            let mut li = String::from("\n    <li>");
 
             let a_tag = match e {
                 Entry::Dir(name, _) => {

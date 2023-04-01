@@ -1,6 +1,7 @@
 use serde_json::{json, Value};
 use std::{
-    ffi::{OsStr, OsString},
+    ffi::OsString,
+    fmt::{self, Write},
     fs, io,
     path::Path,
 };
@@ -16,8 +17,12 @@ impl Entry {
         // TODO
     }
 
-    pub fn print(&self, level: usize) {
-        print_entry(self, level)
+    pub fn print(&self) {
+        print!("{}", self.to_string());
+    }
+
+    pub fn to_string(&self) -> String {
+        entry_to_string(self, 4, 0)
     }
 
     pub fn print_json(&self) {
@@ -29,12 +34,11 @@ impl Entry {
     }
 }
 
-// fn is_dir(dir_path: &str) -> bool {
-//     match fs::metadata(dir_path) {
-//         Ok(md) => md.is_dir(),
-//         _ => false,
-//     }
-// }
+impl fmt::Display for Entry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_string())
+    }
+}
 
 /// path can simply be `&Path::new(".")`  
 ///
@@ -67,18 +71,22 @@ fn create_entry(path: &Path, is_omit: fn(&str) -> bool) -> io::Result<Entry> {
     }
 }
 
-fn print_entry(entry: &Entry, level: usize) {
+fn entry_to_string(entry: &Entry, indent: usize, depth: usize) -> String {
+    let mut sb = String::new();
+    let space = " ".repeat(indent * depth);
     match entry {
         Entry::File(name) => {
-            println!("{}{}", " ".repeat(level * 4), name);
+            writeln!(sb, "{}{}", space, name).unwrap();
         }
         Entry::Dir(name, children) => {
-            println!("{}{}", " ".repeat(level * 4), name);
+            println!("{}{}/", space, name);
             for child in children {
-                print_entry(child, level + 1);
+                let str = entry_to_string(child, indent, depth + 1);
+                write!(sb, "{}", str).unwrap();
             }
         }
     }
+    sb
 }
 
 fn entry_to_json(entry: &Entry) -> Value {
