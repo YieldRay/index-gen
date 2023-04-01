@@ -12,6 +12,13 @@ pub enum Entry {
 }
 
 impl Entry {
+    pub fn name(&self) -> &str {
+        match self {
+            Entry::Dir(name, _) => name,
+            Entry::File(name) => name,
+        }
+    }
+
     pub fn new(path: &Path) -> io::Result<Entry> {
         create_entry(path, |s| s.starts_with("."))
         // TODO
@@ -75,9 +82,6 @@ fn entry_to_string(entry: &Entry, indent: usize, depth: usize) -> String {
     let mut sb = String::new();
     let space = " ".repeat(indent * depth);
     match entry {
-        Entry::File(name) => {
-            writeln!(sb, "{}{}", space, name).unwrap();
-        }
         Entry::Dir(name, children) => {
             println!("{}{}/", space, name);
             for child in children {
@@ -85,20 +89,23 @@ fn entry_to_string(entry: &Entry, indent: usize, depth: usize) -> String {
                 write!(sb, "{}", str).unwrap();
             }
         }
+        Entry::File(name) => {
+            writeln!(sb, "{}{}", space, name).unwrap();
+        }
     }
     sb
 }
 
 fn entry_to_json(entry: &Entry) -> Value {
     match entry {
-        Entry::File(name) => json!({
-            "type": "file",
-            "name": name,
-        }),
         Entry::Dir(name, children) => json!({
             "type": "dir",
             "name": name,
             "children": children.iter().map(entry_to_json).collect::<Vec<_>>(),
+        }),
+        Entry::File(name) => json!({
+            "type": "file",
+            "name": name,
         }),
     }
 }

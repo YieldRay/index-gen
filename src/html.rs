@@ -1,7 +1,7 @@
 use crate::entry::Entry;
 use std::fmt::Write;
 
-fn basic_html<'a>(title: &'a str, body: &'a str) -> String {
+fn basic_html<'a>(dirname: &'a str, body: &'a str) -> String {
     format!(
         r#"<!DOCTYPE html>
 <html lang="en">
@@ -9,19 +9,19 @@ fn basic_html<'a>(title: &'a str, body: &'a str) -> String {
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Index of /{}</title>
+    <title>Index of {}/</title>
 </head>
 <body>
-  <h1>Index of /{}</h1>
+  <h1>Index of {}/</h1>
   {}
 </body>
 </html>"#,
-        title, title, body
+        dirname, dirname, body
     )
 }
 
 pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str) -> String {
-    if let Entry::Dir(root_dir_name, children) = entry {
+    if let Entry::Dir(current_dir_name, children) = entry {
         let mut builder = String::new();
         builder.push_str("<ul>");
         if parent_dir != "." {
@@ -43,12 +43,13 @@ pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str) -> S
                 Entry::File(name) => {
                     if name == index_file_name {
                         // exclude index_file_name
-                        break;
+                        continue;
                     } else {
                         format!("<a href=\"{}\">{}</a>", name, name)
                     }
                 }
             };
+
             li.push_str(&a_tag);
             li.push_str("</li>");
             builder.push_str(&li)
@@ -58,9 +59,9 @@ pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str) -> S
         builder.to_string();
 
         if parent_dir == "." {
-            basic_html("", &builder)
+            basic_html(".", &builder)
         } else {
-            basic_html(root_dir_name, &builder)
+            basic_html(&format!("{}/{}", parent_dir, current_dir_name), &builder)
         }
     } else {
         panic!("Ensure Entry to be Entry::Dir !")
