@@ -1,12 +1,11 @@
-#![recursion_limit = "256"]
-mod entry;
+pub mod entry;
 mod file;
 mod html;
 
 use clap::Parser;
-use std::path::Path;
+use std::{path::Path, process::exit};
 
-/// Generating index.html file recursively for a directory
+/// Generate index.html file recursively for a directory
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -52,7 +51,7 @@ fn main() {
         Ok(entry) => {
             if args.json && args.string {
                 eprintln!("Cannot print both json and string");
-                return;
+                exit(1);
             }
 
             if args.json {
@@ -65,11 +64,30 @@ fn main() {
                 return;
             }
 
+            // start to gen index
             let index_file_name = args.name;
-            file::gen_index(&entry, ".", &index_file_name, force)
+
+            let total_count = entry.count_dir();
+
+            let success_count = file::gen_index(&entry, ".", &index_file_name, force);
+
+            let auto_s = |c: usize, s: &str, ss: &str| {
+                if c > 0 {
+                    format!("{} {}", c, ss)
+                } else {
+                    format!("{} {}", c, s)
+                }
+            };
+
+            print!(
+                "\nGenerated {} for {}",
+                auto_s(success_count, "index file", "index files"),
+                auto_s(total_count, "directory", "directories")
+            );
         }
         Err(e) => {
             eprintln!("--dir={}\n{}", root_dir, e);
+            exit(1)
         }
     }
 }

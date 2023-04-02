@@ -5,16 +5,17 @@ a cli tool for generating index.html file recursively for a directory
 # Usage
 
 ```
-Generating index.html file recursively for a directory
+Generate index.html file recursively for a directory
 
 Usage: index-gen [OPTIONS]
 
 Options:
   -d, --dir <DIR>    Root dir to generate, default is current dir [default: .]
   -n, --name <NAME>  The index file name [default: index.html]
+  -a, --all          Do not ignore entries starting with `.`
   -f, --force        Override if the index file already exists
-  -j, --json         Do not generate file, only print JSON
-  -s, --string       Do not generate file, only print String
+      --json         Do not generate file, only print JSON
+      --string       Do not generate file, only print String
   -h, --help         Print help
   -V, --version      Print version
 ```

@@ -12,6 +12,7 @@ pub enum Entry {
 }
 
 impl Entry {
+    #[allow(dead_code)]
     pub fn name(&self) -> &str {
         match self {
             Entry::Dir(name, _) => name,
@@ -41,6 +42,10 @@ impl Entry {
 
     pub fn to_json(&self) -> Value {
         entry_to_json(self)
+    }
+
+    pub fn count_dir(&self) -> usize {
+        entry_count_dir(self)
     }
 }
 
@@ -81,6 +86,7 @@ fn create_entry(path: &Path, is_omit: fn(&str) -> bool) -> io::Result<Entry> {
     }
 }
 
+/// depth should start from zero
 fn entry_to_string(entry: &Entry, indent: usize, depth: usize) -> String {
     let mut sb = String::new();
     let space = " ".repeat(indent * depth);
@@ -111,4 +117,15 @@ fn entry_to_json(entry: &Entry) -> Value {
             "name": name,
         }),
     }
+}
+
+fn entry_count_dir(entry: &Entry) -> usize {
+    let mut count = 0;
+
+    if let Entry::Dir(_, children) = entry {
+        count += 1;
+        count += children.into_iter().map(entry_count_dir).sum::<usize>();
+    }
+
+    count
 }
