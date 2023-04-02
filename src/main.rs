@@ -94,8 +94,13 @@ fn main() {
 
             // start to gen index
             let total_count = entry.count_dir();
-            let success_count =
-                file::gen_index(&entry, &PathBuf::from(root_dir), &index_file_name, force);
+            let success_count = file::gen_index(
+                &entry,
+                &PathBuf::from(root_dir),
+                &index_file_name,
+                force,
+                "",
+            );
 
             print!(
                 "\nGenerated {} for {}",

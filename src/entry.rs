@@ -7,8 +7,10 @@ use std::{
 };
 
 pub enum Entry {
+    /// name children
     Dir(String, Vec<Entry>),
-    File(String),
+    /// name size
+    File(String, u64),
 }
 
 impl Entry {
@@ -16,7 +18,7 @@ impl Entry {
     pub fn name(&self) -> &str {
         match self {
             Entry::Dir(name, _) => name,
-            Entry::File(name) => name,
+            Entry::File(name, _) => name,
         }
     }
 
@@ -59,8 +61,6 @@ impl fmt::Display for Entry {
 ///
 /// path_filter is for filtering unwanted path
 fn create_entry(path: &Path, is_omit: fn(&str) -> bool) -> io::Result<Entry> {
-    let md = fs::metadata(path)?;
-
     let filename = path
         .file_name()
         .or(Some(&OsString::from(".")))
@@ -69,8 +69,8 @@ fn create_entry(path: &Path, is_omit: fn(&str) -> bool) -> io::Result<Entry> {
         .into_string()
         .unwrap();
 
-    if md.is_file() {
-        return Ok(Entry::File(filename));
+    if path.is_file() {
+        return Ok(Entry::File(filename, path.metadata().unwrap().len()));
     } else {
         let mut children = vec![];
         for entry in fs::read_dir(path)? {
@@ -98,7 +98,7 @@ fn entry_to_string(entry: &Entry, indent: usize, depth: usize) -> String {
                 write!(sb, "{}", str).unwrap();
             }
         }
-        Entry::File(name) => {
+        Entry::File(name, _) => {
             writeln!(sb, "{}{}", space, name).unwrap();
         }
     }
@@ -112,7 +112,7 @@ fn entry_to_json(entry: &Entry) -> Value {
             "name": name,
             "children": children.iter().map(entry_to_json).collect::<Vec<_>>(),
         }),
-        Entry::File(name) => json!({
+        Entry::File(name, _) => json!({
             "type": "file",
             "name": name,
         }),

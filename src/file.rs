@@ -15,7 +15,13 @@ fn path_to_unix_string(path: &PathBuf) -> String {
 /// for current dir, parent_dir should be `.`  
 ///
 /// force: force wirte file even if the file already exists  
-pub fn gen_index(entry: &Entry, parent_dir: &PathBuf, index_file_name: &str, force: bool) -> usize {
+pub fn gen_index(
+    entry: &Entry,
+    parent_dir: &PathBuf,
+    index_file_name: &str,
+    force: bool,
+    css: &str,
+) -> usize {
     let mut success_count = 0;
 
     if let Entry::Dir(dirname, children) = entry {
@@ -42,7 +48,12 @@ pub fn gen_index(entry: &Entry, parent_dir: &PathBuf, index_file_name: &str, for
         } else {
             if let Err(e) = fs::write(
                 filepath,
-                html_for_dir(entry, &path_to_unix_string(parent_dir), index_file_name),
+                html_for_dir(
+                    entry,
+                    &path_to_unix_string(parent_dir),
+                    index_file_name,
+                    css,
+                ),
             ) {
                 eprintln!("{}", e);
                 panic!();
@@ -52,7 +63,7 @@ pub fn gen_index(entry: &Entry, parent_dir: &PathBuf, index_file_name: &str, for
         }
 
         for child in children {
-            success_count += gen_index(child, &dirpath, index_file_name, force)
+            success_count += gen_index(child, &dirpath, index_file_name, force, css)
         }
     }
     success_count

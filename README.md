@@ -23,5 +23,6 @@ Options:
 
 # Todo
 
--   [ ] display file size
--   [ ] support html template
+-   [x] display file size
+-   [ ] custom css
+-   [ ] sort file and dirs
