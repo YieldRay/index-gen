@@ -18,16 +18,20 @@ struct Args {
     #[arg(short, long, value_name = "NAME", default_value_t = String::from("index.html"))]
     name: String,
 
+    /// Do not ignore entries starting with `.`
+    #[arg(short, long, default_value_t = false)]
+    all: bool,
+
     /// Override if the index file already exists
     #[arg(short, long, default_value_t = false)]
     force: bool,
 
     /// Do not generate file, only print JSON
-    #[arg(short, long, default_value_t = false)]
+    #[arg(long, default_value_t = false)]
     json: bool,
 
     /// Do not generate file, only print String
-    #[arg(short, long, default_value_t = false)]
+    #[arg(long, default_value_t = false)]
     string: bool,
 }
 
@@ -36,7 +40,15 @@ fn main() {
     let root_dir = args.dir;
     let force = args.force;
 
-    match entry::Entry::new(&Path::new(&root_dir)) {
+    let path = Path::new(&root_dir);
+
+    let entry = if args.all {
+        entry::Entry::new_all(path)
+    } else {
+        entry::Entry::new(path)
+    };
+
+    match entry {
         Ok(entry) => {
             if args.json && args.string {
                 eprintln!("Cannot print both json and string");
@@ -57,7 +69,7 @@ fn main() {
             file::gen_index(&entry, ".", &index_file_name, force)
         }
         Err(e) => {
-            eprintln!("-dir={}\n{}", root_dir, e);
+            eprintln!("--dir={}\n{}", root_dir, e);
         }
     }
 }

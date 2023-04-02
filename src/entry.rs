@@ -21,7 +21,10 @@ impl Entry {
 
     pub fn new(path: &Path) -> io::Result<Entry> {
         create_entry(path, |s| s.starts_with("."))
-        // TODO
+    }
+
+    pub fn new_all(path: &Path) -> io::Result<Entry> {
+        create_entry(path, |_| true)
     }
 
     pub fn print(&self) {
