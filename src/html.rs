@@ -24,11 +24,13 @@ pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str) -> S
     if let Entry::Dir(current_dir_name, children) = entry {
         let mut builder = String::new();
         builder.push_str("<ul>");
+
+        // back to parent dir
         if parent_dir != "." {
             writeln!(
                 builder,
-                "\n    <li><a href=\"../{}\">..</a></li>",
-                index_file_name
+                r#"{}<li><a href="../{}">..</a></li>"#,
+                "\n    ", index_file_name
             )
             .unwrap();
         }
@@ -38,14 +40,14 @@ pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str) -> S
 
             let a_tag = match e {
                 Entry::Dir(name, _) => {
-                    format!("<a href=\"{}/{}\">{}/</a>", name, index_file_name, name)
+                    format!(r#"<a href="{}/{}">{}/</a>"#, name, index_file_name, name)
                 }
                 Entry::File(name) => {
                     if name == index_file_name {
                         // exclude index_file_name
                         continue;
                     } else {
-                        format!("<a href=\"{}\">{}</a>", name, name)
+                        format!(r#"<a href="{}">{}</a>"#, name, name)
                     }
                 }
             };
@@ -58,10 +60,16 @@ pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str) -> S
         builder.push_str("</ul>");
         builder.to_string();
 
+        // println!("{}", parent_dir);
+
         if parent_dir == "." {
             basic_html(".", &builder)
         } else {
-            basic_html(&format!("{}/{}", parent_dir, current_dir_name), &builder)
+            if parent_dir == "./." {
+                basic_html(&format!("./{}", current_dir_name), &builder)
+            } else {
+                basic_html(&format!("{}/{}", parent_dir, current_dir_name), &builder)
+            }
         }
     } else {
         panic!("Ensure Entry to be Entry::Dir !")

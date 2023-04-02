@@ -7,7 +7,7 @@ fn path_to_unix_string(path: &PathBuf) -> String {
         .to_string()
         .replace(r#"\"#, "/")
         .replace("/./", "/")
-        .replacen("./", "", 1)
+    // .replacen("./", "", 1)
 }
 
 /// generate index_file_name for parent_dir/entry(if is a dir)   
