@@ -3,7 +3,12 @@ mod file;
 mod html;
 
 use clap::Parser;
-use std::{path::Path, process::exit};
+use std::{
+    path::{Path, PathBuf},
+    process::exit,
+};
+
+use crate::file::rm_index;
 
 /// Generate index.html file recursively for a directory
 #[derive(Parser, Debug)]
@@ -17,26 +22,31 @@ struct Args {
     #[arg(short, long, value_name = "NAME", default_value_t = String::from("index.html"))]
     name: String,
 
-    /// Do not ignore entries starting with `.`
-    #[arg(short, long, default_value_t = false)]
-    all: bool,
-
     /// Override if the index file already exists
     #[arg(short, long, default_value_t = false)]
     force: bool,
 
+    /// Do not ignore entries starting with `.`
+    #[arg(short, long, default_value_t = false)]
+    all: bool,
+
+    /// Recursively remove all index file
+    #[arg(group = "output", long, default_value_t = false)]
+    remove: bool,
+
     /// Do not generate file, only print JSON
-    #[arg(long, default_value_t = false)]
+    #[arg(group = "output", long, default_value_t = false)]
     json: bool,
 
     /// Do not generate file, only print String
-    #[arg(long, default_value_t = false)]
+    #[arg(group = "output", long, default_value_t = false)]
     string: bool,
 }
 
 fn main() {
     let args = Args::parse();
     let root_dir = args.dir;
+
     let force = args.force;
 
     let path = Path::new(&root_dir);
@@ -49,28 +59,19 @@ fn main() {
 
     match entry {
         Ok(entry) => {
-            if args.json && args.string {
-                eprintln!("Cannot print both json and string");
-                exit(1);
-            }
-
             if args.json {
+                // --json
                 entry.print_json();
                 return;
             }
 
             if args.string {
+                // --string
                 entry.print();
                 return;
             }
 
-            // start to gen index
-            let index_file_name = args.name;
-
-            let total_count = entry.count_dir();
-
-            let success_count = file::gen_index(&entry, ".", &index_file_name, force);
-
+            // util function aims to add `s` to the end of a word
             let auto_s = |c: usize, s: &str, ss: &str| {
                 if c > 0 {
                     format!("{} {}", c, ss)
@@ -78,6 +79,23 @@ fn main() {
                     format!("{} {}", c, s)
                 }
             };
+
+            let index_file_name = args.name;
+
+            if args.remove {
+                // --remove
+                let removed_count = rm_index(&entry, &PathBuf::from(root_dir), &index_file_name);
+                print!(
+                    "\nRemoved {}",
+                    auto_s(removed_count, "index file", "index files"),
+                );
+                return;
+            }
+
+            // start to gen index
+            let total_count = entry.count_dir();
+            let success_count =
+                file::gen_index(&entry, &PathBuf::from(root_dir), &index_file_name, force);
 
             print!(
                 "\nGenerated {} for {}",

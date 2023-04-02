@@ -68,7 +68,7 @@ pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str) -> S
             if parent_dir == "./." {
                 basic_html(&format!("./{}", current_dir_name), &builder)
             } else {
-                basic_html(&format!("{}/{}", parent_dir, current_dir_name), &builder)
+                basic_html(&format!("{}{}", parent_dir, current_dir_name), &builder)
             }
         }
     } else {
