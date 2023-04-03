@@ -3,10 +3,7 @@ mod file;
 mod html;
 
 use clap::Parser;
-use std::{
-    path::{Path, PathBuf},
-    process::exit,
-};
+use std::{path::Path, process::exit};
 
 use crate::file::rm_index;
 
@@ -25,6 +22,10 @@ struct Args {
     /// Override if the index file already exists
     #[arg(short, long, default_value_t = false)]
     force: bool,
+
+    /// Inject some html to <head> of the index html
+    #[arg(long, value_name = "HTML")]
+    inject: Option<String>,
 
     /// Do not ignore entries starting with `.`
     #[arg(short, long, default_value_t = false)]
@@ -45,16 +46,15 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    let root_dir = args.dir;
 
-    let force = args.force;
+    // --dir
+    let dirpath = Path::new(&args.dir);
 
-    let path = Path::new(&root_dir);
-
+    // --all
     let entry = if args.all {
-        entry::Entry::new_all(path)
+        entry::Entry::new_all(dirpath)
     } else {
-        entry::Entry::new(path)
+        entry::Entry::new(dirpath)
     };
 
     match entry {
@@ -80,11 +80,12 @@ fn main() {
                 }
             };
 
+            // --name
             let index_file_name = args.name;
 
             if args.remove {
                 // --remove
-                let removed_count = rm_index(&entry, &PathBuf::from(root_dir), &index_file_name);
+                let removed_count = rm_index(&entry, &dirpath.to_path_buf(), &index_file_name);
                 print!(
                     "\nRemoved {}",
                     auto_s(removed_count, "index file", "index files"),
@@ -92,14 +93,21 @@ fn main() {
                 return;
             }
 
-            // start to gen index
+            // --inject
+            let inject = match args.inject {
+                Some(code) => code,
+                None => "".to_string(),
+            };
+
             let total_count = entry.count_dir();
+
+            // --force
             let success_count = file::gen_index(
                 &entry,
-                &PathBuf::from(root_dir),
+                &dirpath.to_path_buf(),
                 &index_file_name,
-                force,
-                "",
+                args.force,
+                &inject,
             );
 
             print!(
@@ -109,7 +117,7 @@ fn main() {
             );
         }
         Err(e) => {
-            eprintln!("--dir={}\n{}", root_dir, e);
+            eprintln!("--dir={}\n{}", args.dir, e);
             exit(1)
         }
     }

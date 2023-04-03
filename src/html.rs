@@ -2,11 +2,11 @@ use crate::entry::Entry;
 use humansize::{format_size, DECIMAL};
 use std::fmt::Write;
 
-fn basic_html<'a>(dirname: &'a str, body: &'a str, css: &'a str) -> String {
-    let style = if css.len() > 0 {
-        css
+fn basic_html<'a>(dirname: &'a str, body: &'a str, head: &'a str) -> String {
+    let head = if head.len() > 0 {
+        format!("\n    {}", head)
     } else {
-        r#"li>a{display:inline-flex;min-width:20%;margin-right:1rem;}"#
+        String::from(r#"<style>li>a{display:inline-flex;min-width:20%;}<style>"#)
     };
 
     format!(
@@ -16,19 +16,18 @@ fn basic_html<'a>(dirname: &'a str, body: &'a str, css: &'a str) -> String {
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Index of {}/</title>
-    <style>{}</style>
+    <title>Index of {}/</title>{}
 </head>
 <body>
   <h1>Index of {}/</h1>
   {}
 </body>
 </html>"#,
-        dirname, style, dirname, body
+        dirname, head, dirname, body
     )
 }
 
-pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str, css: &str) -> String {
+pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str, head: &str) -> String {
     if let Entry::Dir(current_dir_name, children) = entry {
         let mut builder = String::new();
         builder.push_str("<ul>");
@@ -57,7 +56,7 @@ pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str, css:
                     } else {
                         // display file size
                         format!(
-                            r#"<a href="{}">{}</a><span>{}</span>"#,
+                            r#"<a href="{}">{}</a>&nbsp;&nbsp;<span>{}</span>"#,
                             name,
                             name,
                             format_size(*size, DECIMAL)
@@ -77,15 +76,15 @@ pub fn html_for_dir(entry: &Entry, parent_dir: &str, index_file_name: &str, css:
         // println!("{}", parent_dir);
 
         if parent_dir == "." {
-            basic_html(".", &builder, css)
+            basic_html(".", &builder, head)
         } else {
             if parent_dir == "./." {
-                basic_html(&format!("./{}", current_dir_name), &builder, css)
+                basic_html(&format!("./{}", current_dir_name), &builder, head)
             } else {
                 basic_html(
                     &format!("{}{}", parent_dir, current_dir_name),
                     &builder,
-                    css,
+                    head,
                 )
             }
         }
