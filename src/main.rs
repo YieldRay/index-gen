@@ -1,8 +1,10 @@
-pub mod entry;
 mod file;
-mod html;
+mod index;
+mod select;
 
 use clap::Parser;
+use file::gen_index;
+use select::select;
 use std::{path::Path, process::exit};
 
 use crate::file::rm_index;
@@ -15,8 +17,8 @@ struct Args {
     #[arg(short, long, value_name = "DIR", default_value_t = String::from("."))]
     dir: String,
 
-    /// The index file name
-    #[arg(short, long, value_name = "NAME", default_value_t = String::from("index.html"))]
+    /// The index file PREFIX name, will automatically use correct extension name
+    #[arg(short, long, value_name = "NAME", default_value_t = String::from("index"))]
     name: String,
 
     /// Override if the index file already exists
@@ -32,93 +34,67 @@ struct Args {
     all: bool,
 
     /// Recursively remove all index file
-    #[arg(group = "output", long, default_value_t = false)]
+    #[arg(long, default_value_t = false)]
     remove: bool,
 
-    /// Do not generate file, only print JSON
+    /// Generate html
+    #[arg(group = "output", long, default_value_t = false)]
+    html: bool,
+
+    /// Generate JSON
     #[arg(group = "output", long, default_value_t = false)]
     json: bool,
 
-    /// Do not generate file, only print String
+    /// Generate Txt
     #[arg(group = "output", long, default_value_t = false)]
-    string: bool,
+    txt: bool,
 }
 
 fn main() {
     let args = Args::parse();
 
     // --dir
-    let dirpath = Path::new(&args.dir);
+    let path = Path::new(&args.dir);
+    if !path.is_dir() {
+        eprintln!("--dir is not a directory!");
+        exit(1);
+    }
 
-    // --all
-    let entry = if args.all {
-        entry::Entry::new_all(dirpath)
-    } else {
-        entry::Entry::new(dirpath)
+    let (interface, index_file_name) = select(
+        // --name --all --html --json --txt --remove
+        &args.name,
+        args.all,
+        &args.inject.unwrap_or(String::new()),
+        args.html,
+        args.json,
+        args.txt,
+    );
+
+    let auto_s = |c: usize, s: &str, ss: &str| {
+        if c > 0 {
+            format!("{} {}", c, ss)
+        } else {
+            format!("{} {}", c, s)
+        }
     };
 
-    match entry {
-        Ok(entry) => {
-            if args.json {
-                // --json
-                entry.print_json();
-                return;
-            }
+    let done;
+    let total;
+    let msg;
 
-            if args.string {
-                // --string
-                entry.print();
-                return;
-            }
-
-            // util function aims to add `s` to the end of a word
-            let auto_s = |c: usize, s: &str, ss: &str| {
-                if c > 0 {
-                    format!("{} {}", c, ss)
-                } else {
-                    format!("{} {}", c, s)
-                }
-            };
-
-            // --name
-            let index_file_name = args.name;
-
-            if args.remove {
-                // --remove
-                let removed_count = rm_index(&entry, &dirpath.to_path_buf(), &index_file_name);
-                print!(
-                    "\nRemoved {}",
-                    auto_s(removed_count, "index file", "index files"),
-                );
-                return;
-            }
-
-            // --inject
-            let inject = match args.inject {
-                Some(code) => code,
-                None => "".to_string(),
-            };
-
-            let total_count = entry.count_dir();
-
-            // --force
-            let success_count = file::gen_index(
-                &entry,
-                &dirpath.to_path_buf(),
-                &index_file_name,
-                args.force,
-                &inject,
-            );
-
-            print!(
-                "\nGenerated {} for {}",
-                auto_s(success_count, "index file", "index files"),
-                auto_s(total_count, "directory", "directories")
-            );
-        }
-        Err(e) => {
-            eprintln!("--dir={}\n{}", args.dir, e);
-            exit(1)
-        }
+    // --remove
+    if args.remove {
+        (done, total) = rm_index(path, &index_file_name);
+        msg = "Removed";
+    } else {
+        (done, total) = gen_index(path, interface, &index_file_name, args.force);
+        msg = "Generated";
     }
+
+    println!(
+        "{} {} of {}",
+        msg,
+        auto_s(done, "file", "files"),
+        auto_s(total, "file", "files")
+    );
 }
