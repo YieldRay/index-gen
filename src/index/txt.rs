@@ -13,7 +13,7 @@ impl ToIndexString for IndexTXT {
     }
 }
 
-/// Genrate Txt for a Path object
+/// Generate Txt for a Path object
 pub fn txt_for_dir(path: &Path, all: bool) -> String {
     let mut txt = String::new();
 

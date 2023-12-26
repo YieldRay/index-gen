@@ -35,7 +35,7 @@ pub fn rm_index(path: &Path, index_file_name: &str) -> (usize, usize) {
     (done, total)
 }
 
-/// Genrate index file recursively in a directory
+/// Generate index file recursively in a directory
 pub fn gen_index(
     path: &Path,
     interface: Box<dyn ToIndexString>,

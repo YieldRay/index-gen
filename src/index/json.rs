@@ -14,7 +14,7 @@ impl ToIndexString for IndexJSON {
     }
 }
 
-/// Genrate JSON for a Path object
+/// Generate JSON for a Path object
 pub fn json_for_dir(path: &Path, all: bool) -> String {
     let mut arr = Vec::new();
 

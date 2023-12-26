@@ -21,7 +21,7 @@ impl ToIndexString for IndexHTML {
     }
 }
 
-/// Genrate HTML for a Path object
+/// Generate HTML for a Path object
 fn html_for_dir(
     path: &Path,
     index_file_name: &str,
